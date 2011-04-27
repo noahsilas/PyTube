@@ -259,8 +259,13 @@ class Client(object):
                 data=auth_data
             )
         except urllib2.HTTPError, e:
+            # convert the response into a usable error dict
             response = e.read()
             data = dict([r.split('=', 1) for r in response.strip().split()])
+            # we just trashed the response iterator; put the response back in
+            # an attribute on the exception that the caller can read.
+            e.response = response
+
             if e.getcode() == 403:
                 errors = {
                     'BadAuthentication': "Invalid Credentials",
@@ -269,9 +274,6 @@ class Client(object):
                 reason = errors.get(data.get('Error', None), None)
                 if reason is not None:
                     raise pytube.exceptions.AuthenticationError(reason)
-            # we just trashed the response iterator; put the response back in
-            # an attribute on the exception that the caller can read.
-            e.response = response
             raise
 
         self._auth_data = dict([r.split('=') for r in response.read().split()])
@@ -328,7 +330,14 @@ class Client(object):
     def video(self, video_id):
         """ Gets a specific video from the youtube API.
         """
-        data = self._gdata_json(self.YOUTUBE_VIDEO_URL % {'video_id': video_id, 'v': 2})
+        try:
+            data = self._gdata_json(self.YOUTUBE_VIDEO_URL % {'video_id': video_id, 'v': 2})
+        except urllib2.HttpError, e:
+            if e.code == 403:
+                raise pytube.exceptions.PrivateVideoException
+            if e.code == 404:
+                raise pytube.exceptions.NoSuchVideoException
+            raise
         return Video(self, data[u'entry'])
 
     def video_search(self, term):
