@@ -6,8 +6,8 @@ import warnings
 import logging
 
 from pytube.stream import Stream, YtData
-from pytube.exceptions import AuthenticationError
 from pytube.utils import yt_ts_to_datetime
+import pytube.exceptions
 
 
 class LinksMixin(object):
@@ -244,6 +244,45 @@ class Client(object):
             }
         return {}
 
+    def _client_login(username, password):
+        """ Try to login with gdata ClientLogin"""
+        auth_data = urllib.urlencode({
+            'Email': username,
+            'Passwd': password,
+            'service': 'youtube',
+            'source': self.app_name,
+        })
+        try:
+            response = self._gdata_request(
+                self.GOOGLE_AUTH_URL,
+                query=None,
+                data=auth_data
+            )
+        except urllib2.HTTPError, e:
+            response = e.read()
+            data = dict([r.split('=', 1) for r in response.strip().split()])
+            if e.getcode() == 403:
+                errors = {
+                    'BadAuthentication': "Invalid Credentials",
+                    "AccountDisabled": "Account Disabled",
+                }
+                reason = errors.get(data.get('Error', None), None)
+                if reason is not None:
+                    raise pytube.exceptions.AuthenticationError(reason)
+            # we just trashed the response iterator; put the response back in
+            # an attribute on the exception that the caller can read.
+            e.response = response
+            raise
+
+        self._auth_data = dict([r.split('=') for r in response.read().split()])
+        self.username = username
+
+    def _authsub_login(token):
+        """Authenticates this user with an authsub token"""
+        self._auth_data = {
+            'authsub_token': token,
+        }
+
     def authenticate(self, username=None, password=None, authsub=None):
         """ Authenticates this client with YouTube.
 
@@ -252,28 +291,9 @@ class Client(object):
         """
         assert (username and password) or authsub
         if username and password:
-            auth_data = urllib.urlencode({
-                'Email': username,
-                'Passwd': password,
-                'service': 'youtube',
-                'source': self.app_name,
-            })
-            try:
-                response = self._gdata_request(self.GOOGLE_AUTH_URL, None, auth_data)
-            except urllib2.HTTPError, e:
-                response = e.read().strip()
-                data = dict([r.split('=', 1) for r in response.split()])
-                if e.getcode() == 403 and data.get('Error', None) == 'BadAuthentication':
-                    raise AuthenticationError("Invalid Credentials")
-                raise
-
-            self._auth_data = dict([r.split('=') for r in response.read().split()])
-            self.username = username
-
+            self._client_login(username, password)
         elif authsub:
-            self._auth_data = {
-                'authsub_token': authsub
-            }
+            self._authsub_login()
 
     def unauthenticate(self):
         """ Unauthenticates this client.
