@@ -10,7 +10,7 @@ Display the 50 most recent video ids and titles from the Mahalo Baking channel
     client = pytube.client('my-app-identifier')
     videos = client.user_videos('mahalobaking')
     for video in videos[:50]:
-        sys,stdout.write('%s %s\n' % (video.id, video.title))
+        sys.stdout.write('%s %s\n' % (video.id, video.title))
 
 Streams are cached!
 -------------------------
@@ -48,7 +48,7 @@ pytube:
 Introspecting a gdata entry isn't terribly helpful: All of the relevant
 data is buried in deep levels of object hierarchy. PyTube tries to expose
 as much data as possible in python native data structures. Try looking at
-a video object's __dict__!
+a video object's \_\_dict\_\_!
 
 
 Planned Features
@@ -71,7 +71,7 @@ Known Issues
 
 * Video categories have both a 'term' and a 'label'. It's not really clear how these are differentiated; for now Video.catgories will be a list containing both terms and labels for all applicable catgories.
 
-* video_id_from_youtube_url doesn't support channel urls (example: http://www.youtube.com/user/beyonceVEVO#p/u/0/4m1EFMoRFvY)
+* video_id_from_youtube_url doesn't support channel urls (example: http://www.youtube.com/user/beyonceVEVO#p/u/0/4m1EFMoRFvY )
 
 * Data objects contain references to their client; pickling a VideoStream will
   also pickle the associated client, which may inadvertently cause
@@ -81,5 +81,5 @@ Known Issues
 
 Authors
 -------
-Noah Silas <noah@mahalo.com>
-Kai Powell <kai@mahalo.com>
+Noah Silas (noah@mahalo.com)
+Kai Powell (kai@mahalo.com)
