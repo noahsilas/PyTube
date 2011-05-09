@@ -244,14 +244,20 @@ class Client(object):
             }
         return {}
 
-    def _client_login(username, password):
+    def _client_login(self, username, password, captcha=None):
         """ Try to login with gdata ClientLogin"""
-        auth_data = urllib.urlencode({
+        auth_data = {
             'Email': username,
             'Passwd': password,
             'service': 'youtube',
             'source': self.app_name,
-        })
+        }
+        if captcha:
+            auth_data.update({
+                'logintoken': captcha.token,
+                'logincaptcha': captcha.solved,
+            })
+        auth_data = urllib.urlencode(auth_data)
         try:
             response = self._gdata_request(
                 self.GOOGLE_AUTH_URL,
@@ -274,18 +280,20 @@ class Client(object):
                 reason = errors.get(data.get('Error', None), None)
                 if reason is not None:
                     raise pytube.exceptions.AuthenticationError(reason)
+                if data.get('Error', None) == 'CaptchaRequired':
+                    raise pytube.exceptions.CaptchaRequired(data)
             raise
 
         self._auth_data = dict([r.split('=') for r in response.read().split()])
         self.username = username
 
-    def _authsub_login(token):
+    def _authsub_login(self, token):
         """Authenticates this user with an authsub token"""
         self._auth_data = {
             'authsub_token': token,
         }
 
-    def authenticate(self, username=None, password=None, authsub=None):
+    def authenticate(self, username=None, password=None, captcha=None, authsub=None):
         """ Authenticates this client with YouTube.
 
             You may provide either a username and password, which will invoke
@@ -293,7 +301,7 @@ class Client(object):
         """
         assert (username and password) or authsub
         if username and password:
-            self._client_login(username, password)
+            self._client_login(username, password, captcha)
         elif authsub:
             self._authsub_login()
 
