@@ -339,7 +339,7 @@ class Client(object):
         """ Gets a specific video from the youtube API.
         """
         try:
-            data = self._gdata_json(self.YOUTUBE_VIDEO_URL % {'video_id': video_id, 'v': 2})
+            data = self._gdata_json(self.YOUTUBE_VIDEO_URL % {'video_id': video_id}, {'v': 2})
         except urllib2.HTTPError, e:
             if e.code == 403:
                 raise pytube.exceptions.PrivateVideoException
