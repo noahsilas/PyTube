@@ -131,6 +131,10 @@ class Video(YtData, LinksMixin):
     def __unicode__(self):
         return u"<YouTube Video: %s>" % (str(self.id),)
 
+    def respond_to(self, video_id):
+        self.client.video_response(self.id, video_id)
+
+
 
 class VideoStream(Stream, LinksMixin):
     """ Stream for parsing YouTube Video results """
@@ -141,7 +145,8 @@ class VideoStream(Stream, LinksMixin):
         self.title = data[u'feed'][u'title'][u'$t']
         self.updated = yt_ts_to_datetime(data[u'feed'][u'updated'][u'$t'])
         self._parse_links(data[u'feed'][u'link'])
-        return [Video(self.client, x) for x in data['feed']['entry']]
+        videos = data['feed'].get('entry', ())
+        return [Video(self.client, x) for x in videos]
 
     def __repr__(self):
         return "<YouTube VideoStream: %s>" % (self.uri,)
@@ -206,6 +211,7 @@ class Client(object):
     YOUTUBE_COMMENTS_URL = 'http://gdata.youtube.com/feeds/api/videos/%(video_id)s/comments'
     YOUTUBE_SUBSCRIBE_URL = 'http://gdata.youtube.com/feeds/api/users/default/subscriptions'
     YOUTUBE_SUBSCRIPTIONS_URL = 'http://gdata.youtube.com/feeds/api/users/%(username)s/subscriptions?alt=json&v=2'
+    YOUTUBE_RESPONSE_URL = 'http://gdata.youtube.com/feeds/api/videos/%(original_video_id)s/responses'
 
     def __init__(self, app_name, dev_key=None):
         self._auth_data = None
@@ -348,15 +354,18 @@ class Client(object):
             raise
         return Video(self, data[u'entry'])
 
-    def video_search(self, term):
+    def video_search(self, **query):
         """ Searches YouTube for videos matching a search term
         """
-        return VideoStream(self, self.YOUTUBE_SEARCH_URL, query={'q': term})
+        return VideoStream(self, self.YOUTUBE_SEARCH_URL, query=query)
 
     def video_comments(self, video_id):
         """ Gets Comments for a specific video
         """
         return CommentStream(self, self.YOUTUBE_COMMENTS_URL % {'video_id': video_id})
+
+    def video_responses(self, video_id):
+        return VideoStream(self, self.YOUTUBE_RESPONSE_URL % {'original_video_id': video_id})
 
     def subscribe(self, username='default'):
         """Subscribes the authenticated user to username's channels
@@ -372,3 +381,13 @@ class Client(object):
         </entry>'''.format(username)
         subscribe_headers = { 'Content-Type': 'application/atom+xml'}
         response = self._gdata_request(self.YOUTUBE_SUBSCRIBE_URL, None, subscribe_data, subscribe_headers)
+
+    def video_response(self, original_video_id, response_video_id):
+        response_data = \
+        '''<?xml version="1.0" encoding="UTF-8"?>
+        <entry xmlns="http://www.w3.org/2005/Atom">
+          <id>{0}</id>
+        </entry>'''.format(response_video_id)
+        response_headers = { 'Content-Type': 'application/atom+xml'}
+        response = self._gdata_request(self.YOUTUBE_RESPONSE_URL % {'original_video_id': original_video_id }, None, response_data, response_headers)
+
