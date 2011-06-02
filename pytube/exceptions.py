@@ -11,6 +11,10 @@ class CaptchaRequired(AuthenticationError):
         self.solved = None
 
 
+class TokenExpired(AuthenticationError):
+    """ You are using an expired authentication token """
+
+
 class VideoException(Exception):
     """ Failed to access a video """
 

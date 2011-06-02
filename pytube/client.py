@@ -224,7 +224,15 @@ class Client(object):
             headers['X-GData-Key'] = 'key=' + self.dev_key
 
         request = urllib2.Request(url, data, headers)
-        return urllib2.urlopen(request, timeout=timeout)
+        try:
+            return urllib2.urlopen(request, timeout=timeout)
+        except urllib2.HTTPError, e:
+            if e.getcode() == 401:
+                e.reponse = e.read()
+                if 'TokenExpired' in e.response:
+                    raise pytube.exceptions.TokenExpired()
+                raise e
+            raise
 
     def _gdata_json(self, url, query=None, data=None, headers=None):
         query = query or {}
