@@ -111,7 +111,7 @@ class Video(YtData, LinksMixin):
 
         # All the following attributes don't exist for certain restricted videos
         if u'media$description' in data[u'media$group']:
-            self.description = data[u'media$group'][u'media$description']
+            self.description = data[u'media$group'][u'media$description'][u'$t']
         if u'yt$uploaded' in data[u'media$group']:
             self.uploaded = yt_ts_to_datetime(data[u'media$group'][u'yt$uploaded'][u'$t'])
         if u'yt$duration' in data[u'media$group']:
