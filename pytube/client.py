@@ -110,7 +110,7 @@ class Video(YtData, LinksMixin):
         self.comments = self.client.video_comments(self.id)
 
         # All the following attributes don't exist for certain restricted videos
-        if u'media$description' in u'media$group':
+        if u'media$description' in data[u'media$group']:
             self.description = data[u'media$group'][u'media$description']
         if u'yt$uploaded' in data[u'media$group']:
             self.uploaded = yt_ts_to_datetime(data[u'media$group'][u'yt$uploaded'][u'$t'])
