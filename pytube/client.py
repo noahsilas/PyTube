@@ -362,9 +362,10 @@ class Client(object):
             raise
         return Video(self, data[u'entry'])
 
-    def video_search(self, **query):
+    def video_search(self, q=None, **query):
         """ Searches YouTube for videos matching a search term
         """
+        query['q'] = q
         return VideoStream(self, self.YOUTUBE_SEARCH_URL, query=query)
 
     def video_comments(self, video_id):
