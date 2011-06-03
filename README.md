@@ -7,7 +7,7 @@ Get Some Videos!
 Display the 50 most recent video ids and titles from the Mahalo Baking channel
 
     import pytube
-    client = pytube.client('my-app-identifier')
+    client = pytube.Client('my-app-identifier')
     videos = client.user_videos('mahalobaking')
     for video in videos[:50]:
         sys.stdout.write('%s %s\n' % (video.id, video.title))
