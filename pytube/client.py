@@ -127,6 +127,8 @@ class Video(YtData, LinksMixin):
 
         self.comments = self.client.video_comments(self.id)
 
+        self.access_control = dict((d[u'action'], d[u'permission']) for d in data[u'yt$accessControl'])
+
         # All the following attributes don't exist for certain restricted videos
         if u'media$description' in data[u'media$group']:
             self.description = data[u'media$group'][u'media$description'][u'$t']
