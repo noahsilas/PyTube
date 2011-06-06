@@ -80,9 +80,27 @@ class Profile(YtData, LinksMixin):
 class Video(YtData, LinksMixin):
     """ Collects data about a YouTube Video. """
 
+
+    class Category(str):
+        """ A simple str subclass;
+            by subclassing we can attach attributes to instances.
+        """
+        SCHEME = u'http://gdata.youtube.com/schemas/2007/categories.cat'
+
     def _parse_categories(self, data):
-        self.categories = [(c[u'term'], c[u'label']) for c in data if c['scheme'] == u'http://gdata.youtube.com/schemas/2007/categories.cat']
-        self.keywords = [c['term'] for c in data if c['scheme'] == u'http://gdata.youtube.com/schemas/2007/keywords.cat']
+        """ Given category data from the youtube API, parse it into the
+            category and keyword attributes on self.
+        """
+        # parse the category
+        categories = [c for c in data if c['scheme'] == Video.Category.SCHEME]
+        assert len(categories) == 1
+        self.category = Video.Category(categories[0]['term'])
+        self.category.label = categories[0]['label']
+
+        # parse keywords
+        keyword_scheme = u'http://gdata.youtube.com/schemas/2007/keywords.cat'
+        keywords = [kw for kw in data if kw['scheme'] == keyword_scheme]
+        self.keywords = [kw['term'] for kw in keywords]
         return
 
     def __init__(self, client, data):

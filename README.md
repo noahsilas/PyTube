@@ -69,8 +69,6 @@ Known Issues
 
 * len(Stream) will return the total length of the stream (number of videos in a channel, number of search results, etc), but only the first 1000 of these results are iterable. This is a restriction of the YouTube API.
 
-* Video categories have both a 'term' and a 'label'. It's not really clear how these are differentiated; for now Video.catgories will be a list containing both terms and labels for all applicable catgories.
-
 * video_id_from_youtube_url doesn't support channel urls (example: http://www.youtube.com/user/beyonceVEVO#p/u/0/4m1EFMoRFvY )
 
 * Data objects contain references to their client; pickling a VideoStream will
