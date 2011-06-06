@@ -145,6 +145,12 @@ class Video(YtData, LinksMixin):
             self.comment_count = int(data[u'gd$comments'][u'gd$feedLink'][u'countHint'])
             self.comments._count = self.comment_count
 
+        if u'yt$private' in data[u'media$group']:
+            self.private = True
+        else:
+            self.private = False
+
+
     def __repr__(self):
         return "<YouTube Video: %s>" % (str(self.id),)
 
