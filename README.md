@@ -2,6 +2,10 @@ PyTube
 ======
 Pythonic bindings for the YouTube API.
 
+Prerequisites
+-------------
+Python 2.5+
+
 Get Some Videos!
 ----------------
 Display the 50 most recent video ids and titles from the Mahalo Baking channel
@@ -19,6 +23,25 @@ Streams try to do as few API queries as possible
     vs = client.user_videos('mahalobaking')     # does not hit the YouTube API
     top_ten = vs[:10]                           # actually grabs the first page of results (50) from API
     first = vs[0]                               # returns instantly from local cache!
+
+Updating video Metadata
+-----------------------
+You can edit any of the following properties of a video:
+* title
+* description
+* category
+* keywords
+* access_control
+* private
+
+Just call Video.update() when you are done editing the video to push
+the updated metadata back into youtube.
+
+    v = authenticated_client.user_videos()[0]   # get a video this client owns
+    v.description = "My new description"        # change the video description
+    v.keywords.append('awesome')                # add a keyword
+    v.update()                                  # push the updated metadata back to youtube
+
 
 
 Motivation
@@ -67,7 +90,7 @@ Known Issues
 
 * A video entry without a view_count may either have zero views or it may have it's statistics protected. (http://bit.ly/hWwk40)
 
-* len(Stream) will return the total length of the stream (number of videos in a channel, number of search results, etc), but only the first 1000 of these results are iterable. This is a restriction of the YouTube API.
+* len(Stream) will return the total length of the stream (number of videos in a channel, number of search results, etc), but only the first 1000 of these results are iterable. This is a restriction of the YouTube API.   
 
 * video_id_from_youtube_url doesn't support channel urls (example: http://www.youtube.com/user/beyonceVEVO#p/u/0/4m1EFMoRFvY )
 
@@ -75,9 +98,12 @@ Known Issues
   also pickle the associated client, which may inadvertently cause
   authentication tokens to be preserved.
 
-* Dates from youtube are always returned as Pacific time (PST or PDT); there should be options for localizing based on time.timezone/time.altzone or converting to UTC
+* Timezone handling is hard. video publish dates are returned in UTC but insight data is for days in Pacific time.
+
+* Updating a video from a pytube client can cause the loss of location / geodata on the video
 
 Authors
 -------
 Noah Silas (noah@mahalo.com)
+
 Kai Powell (kai@mahalo.com)

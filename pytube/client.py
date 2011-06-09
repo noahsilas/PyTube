@@ -4,6 +4,11 @@ import urllib, urllib2
 import datetime
 import warnings
 import logging
+import httplib
+import contextlib
+import urlparse
+import xml.sax.saxutils as saxutils
+
 
 from pytube.stream import Stream, YtData
 from pytube.utils import yt_ts_to_datetime
@@ -30,6 +35,8 @@ class LinksMixin(object):
             self.video_responses = VideoStream(self.client, self._links['video.responses'][u'href'])
         if 'insight.views' in self._links:
             self.insight_url = self._links['insight.views']['href']
+        if 'edit' in self._links:
+            self.edit_url = self._links['edit'][u'href']
 
 
 class Profile(YtData, LinksMixin):
@@ -80,6 +87,7 @@ class Profile(YtData, LinksMixin):
 class Video(YtData, LinksMixin):
     """ Collects data about a YouTube Video. """
 
+    EDIT_URL = "http://gdata.youtube.com/feeds/api/users/%(user_id)s/uploads/%(video_id)s"
 
     class Category(str):
         """ A simple str subclass;
@@ -160,7 +168,75 @@ class Video(YtData, LinksMixin):
     def respond_to(self, video_id):
         self.client.video_response(self.id, video_id)
 
+    def update(self, timeout=None):
+        """ Updates this video's metadata on youtube
+        """
+        timeout = timeout or self.client.default_timeout
+        xml_template = """<?xml version="1.0"?>
+<entry xmlns="http://www.w3.org/2005/Atom"
+  xmlns:media="http://search.yahoo.com/mrss/"
+  xmlns:yt="http://gdata.youtube.com/schemas/2007">
+  <media:group>
+    <media:title type="plain">{title}</media:title>
+    <media:description type="plain">{description}</media:description>
+    <media:category scheme="http://gdata.youtube.com/schemas/2007/categories.cat">{category}</media:category>
+    <media:keywords>{keywords}</media:keywords>
+    {private}
+  </media:group>
+{accessControl}
+</entry>
+        """
 
+        def format_acl_row(a,p):
+            template = """  <yt:accessControl action="{a}" permission="{p}"/>"""
+            return template.format(a=a,p=p)
+
+        def format_acl():
+            return '\n'.join(
+                format_acl_row(k,v) for k,v in self.access_control.items()
+            )
+
+        params = {
+            'title': saxutils.escape(self.title).encode('utf-8'),
+            'description': saxutils.escape(self.description).encode('utf-8'),
+            'category': self.category,
+            'keywords': ','.join(k.encode('utf-8') for k in self.keywords),
+            'accessControl': format_acl(),
+            'private': """<yt:private/>""" if self.private else ''
+        }
+
+        request_body = xml_template.format(**params)
+
+        # get the url
+        edit_url = getattr(self, 'edit_url', None)
+        if not edit_url:
+            edit_url = self.EDIT_URL % {
+                'user_id': self.author,
+                'video_id': self.id,
+            }
+        url = urlparse.urlparse(edit_url)
+
+        headers = self.client._default_headers()
+        headers['GData-Version'] = 2
+        headers['Content-Type'] = 'application/atom+xml'
+
+        # urllib2 doesn't support the PUT method.
+        # time to use httplib instead.
+        with contextlib.closing(
+            httplib.HTTPConnection(url.netloc, timeout=timeout)
+            ) as connection:
+            connection.request("PUT", url.path, request_body, headers)
+            response = connection.getresponse()
+            response_body = response.read()
+        if response.status != 200:
+            e = pytube.exceptions.VideoUpdateException(dat)
+            e.url = edit_url
+            e.request_body = data
+            e.request_headers = headers
+            e.response = response
+            e.response_body = dat
+            raise e
+        return
 
 class VideoStream(Stream, LinksMixin):
     """ Stream for parsing YouTube Video results """
@@ -246,6 +322,29 @@ class Client(object):
         self.app_name = app_name
         self.dev_key = dev_key
 
+    def _default_headers(self):
+        """ Headers that should be added to all gdata requests
+        """
+        dh = self._auth_headers()
+        if self.dev_key:
+            dh['X-GData-Key'] = 'key=' + self.dev_key
+        return dh
+
+    def _auth_headers(self):
+        """ Generate any GData authorization headers
+        """
+        if self._auth_data is None:
+            return {}
+        if 'Auth' in self._auth_data:
+            return {
+                'Authorization': "GoogleLogin auth=" + self._auth_data['Auth'],
+            }
+        if 'authsub_token' in self._auth_data:
+            return {
+                'Authorization': "AuthSub token=" + self._auth_data['authsub_token'],
+            }
+        return {}
+
     def _gdata_request(self, url, query=None, data=None, headers=None, timeout=None):
         timeout = timeout or self.default_timeout
 
@@ -254,9 +353,7 @@ class Client(object):
             url += sep + urllib.urlencode(query)
 
         headers = headers or {}
-        headers.update(self._auth_headers())
-        if self.dev_key:
-            headers['X-GData-Key'] = 'key=' + self.dev_key
+        headers.update(self._default_headers())
 
         request = urllib2.Request(url, data, headers)
         try:

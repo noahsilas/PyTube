@@ -25,3 +25,7 @@ class PrivateVideoException(VideoException):
 
 class NoSuchVideoException(VideoException):
     """ Tried to access a video that does not exist or has been deleted """
+
+
+class VideoUpdateException(VideoException):
+    """ Failed to update a video """
