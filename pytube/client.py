@@ -242,10 +242,13 @@ class Client(object):
     def __init__(self, app_name, dev_key=None):
         self._auth_data = None
         self.username = None
+        self.default_timeout = None
         self.app_name = app_name
         self.dev_key = dev_key
 
     def _gdata_request(self, url, query=None, data=None, headers=None, timeout=None):
+        timeout = timeout or self.default_timeout
+
         if query:
             sep = '?' if '?' not in url else '&'
             url += sep + urllib.urlencode(query)
@@ -266,10 +269,18 @@ class Client(object):
                 raise e
             raise
 
-    def _gdata_json(self, url, query=None, data=None, headers=None):
+    def _gdata_json(self, url, query=None, data=None, headers=None, timeout=None):
         query = query or {}
         query.update({'alt': 'json'})
-        return json.load(self._gdata_request(url, query, data, headers))
+        return json.load(
+            self._gdata_request(
+                url,
+                query=query,
+                data=data,
+                headers=headers,
+                timeout=timeout
+            )
+        )
 
     def _auth_headers(self):
         if self._auth_data is None:
