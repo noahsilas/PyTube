@@ -360,7 +360,7 @@ class Client(object):
             return urllib2.urlopen(request, timeout=timeout)
         except urllib2.HTTPError, e:
             if e.getcode() == 401:
-                e.reponse = e.read()
+                e.response = e.read()
                 if 'TokenExpired' in e.response:
                     raise pytube.exceptions.TokenExpired()
                 raise e
