@@ -490,6 +490,9 @@ class Client(object):
             data = self._gdata_json(self.YOUTUBE_VIDEO_URL % {'video_id': video_id}, {'v': 2})
         except urllib2.HTTPError, e:
             if e.code == 403:
+                e.response = e.read()
+                if 'too_many_recent_calls' in e.response:
+                    raise pytube.exceptions.QuotaException
                 raise pytube.exceptions.PrivateVideoException
             if e.code == 404:
                 raise pytube.exceptions.NoSuchVideoException

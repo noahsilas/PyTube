@@ -19,6 +19,10 @@ class VideoException(Exception):
     """ Failed to access a video """
 
 
+class QuotaException(VideoException):
+    """ Too many recent calls """
+
+
 class PrivateVideoException(VideoException):
     """ Tried to access a video that is marked as private """
 
