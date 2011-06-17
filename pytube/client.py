@@ -200,7 +200,7 @@ class Video(YtData, LinksMixin):
             'title': saxutils.escape(self.title).encode('utf-8'),
             'description': saxutils.escape(self.description).encode('utf-8'),
             'category': self.category,
-            'keywords': ','.join(k.encode('utf-8') for k in self.keywords),
+            'keywords': ','.join(saxutils.escape(k).encode('utf-8') for k in self.keywords),
             'accessControl': format_acl(),
             'private': """<yt:private/>""" if self.private else ''
         }
