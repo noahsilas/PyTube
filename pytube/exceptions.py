@@ -33,3 +33,12 @@ class NoSuchVideoException(VideoException):
 
 class VideoUpdateException(VideoException):
     """ Failed to update a video """
+    def __init__(self, data):
+        self.url = data['url']
+        self.request_body = data['request_body']
+        self.headers = data['headers']
+        self.response = data['response']
+        self.response_body = data['response_body']
+
+    def __str__(self):
+        return 'Response Status: %s\n%s' % (self.response.status, self.response_body)

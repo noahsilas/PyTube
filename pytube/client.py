@@ -229,12 +229,14 @@ class Video(YtData, LinksMixin):
             response = connection.getresponse()
             response_body = response.read()
         if response.status != 200:
-            e = pytube.exceptions.VideoUpdateException()
-            e.url = edit_url
-            e.request_body = request_body
-            e.request_headers = headers
-            e.response = response
-            e.response_body = response_body
+            data = {
+                'url': edit_url,
+                'request_body': request_body,
+                'headers': headers,
+                'response': response,
+                'response_body': response_body
+            }
+            e = pytube.exceptions.VideoUpdateException(data)
             raise e
         return
 
