@@ -4,11 +4,15 @@ class AuthenticationError(Exception):
 
 class CaptchaRequired(AuthenticationError):
     """ You must submit a captcha to continue """
-    def __init__(self, data):
-        self.url = data['Url']
-        self.captcha = 'http://www.google.com/accounts/' + data['CaptchaUrl']
-        self.token = data['CaptchaToken']
+    def __init__(self, msg, data={}):
+        self.url = data.get('Url', '')
+        self.captcha = 'http://www.google.com/accounts/' + data.get('CaptchaUrl', '')
+        self.token = data.get('CaptchaToken', '')
         self.solved = None
+        self.message = msg
+
+    def __str__(self):
+        return self.message
 
 
 class TokenExpired(AuthenticationError):
@@ -33,12 +37,13 @@ class NoSuchVideoException(VideoException):
 
 class VideoUpdateException(VideoException):
     """ Failed to update a video """
-    def __init__(self, data):
-        self.url = data['url']
-        self.request_body = data['request_body']
-        self.headers = data['headers']
-        self.response = data['response']
-        self.response_body = data['response_body']
+    def __init__(self, msg, data={}):
+        self.url = data.get('url', '')
+        self.request_body = data.get('request_body', '')
+        self.headers = data.get('headers', '')
+        self.response = data.get('response', '')
+        self.response_body = data.get('response_body', '')
+        self.message = msg
 
     def __str__(self):
-        return 'Response Status: %s\n%s' % (self.response.status, self.response_body)
+        return self.message
