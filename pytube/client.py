@@ -229,12 +229,15 @@ class Video(YtData, LinksMixin):
             response = connection.getresponse()
             response_body = response.read()
         if response.status != 200:
-            e = pytube.exceptions.VideoUpdateException(dat)
-            e.url = edit_url
-            e.request_body = data
-            e.request_headers = headers
-            e.response = response
-            e.response_body = dat
+            data = {
+                'url': edit_url,
+                'request_body': request_body,
+                'headers': headers,
+                'response': response,
+                'response_body': response_body
+            }
+            msg = 'Response Status: %s\n%s' % (response.status, response_body)
+            e = pytube.exceptions.VideoUpdateException(msg, data)
             raise e
         return
 
@@ -429,7 +432,7 @@ class Client(object):
                 if reason is not None:
                     raise pytube.exceptions.AuthenticationError(reason)
                 if data.get('Error', None) == 'CaptchaRequired':
-                    raise pytube.exceptions.CaptchaRequired(data)
+                    raise pytube.exceptions.CaptchaRequired('Captcha Required', data)
             raise
 
         self._auth_data = dict([r.split('=') for r in response.read().split()])
