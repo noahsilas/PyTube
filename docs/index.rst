@@ -11,20 +11,7 @@ Contents:
 .. toctree::
     :maxdepth: 2
 
-.. automodule:: pytube
-
-.. autoclass:: pytube.Client
-    :members:
-
-.. autofunction:: pytube.video_id_from_youtube_url
-
-.. autoexception:: pytube.AuthenticationError
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+    overview
+    client
+    streams
+    subscriptions
