@@ -15,6 +15,13 @@ from pytube.utils import yt_ts_to_datetime
 import pytube.exceptions
 
 
+class Category(str):
+    """ A simple str subclass;
+        by subclassing we can attach attributes to instances.
+    """
+    SCHEME = u'http://gdata.youtube.com/schemas/2007/categories.cat'
+
+
 class LinksMixin(object):
     """ Provides parsing of strangely formatted youtube api links objects
     """
@@ -89,20 +96,14 @@ class Video(YtData, LinksMixin):
 
     EDIT_URL = "http://gdata.youtube.com/feeds/api/users/%(user_id)s/uploads/%(video_id)s"
 
-    class Category(str):
-        """ A simple str subclass;
-            by subclassing we can attach attributes to instances.
-        """
-        SCHEME = u'http://gdata.youtube.com/schemas/2007/categories.cat'
-
     def _parse_categories(self, data):
         """ Given category data from the youtube API, parse it into the
             category and keyword attributes on self.
         """
         # parse the category
-        categories = [c for c in data if c['scheme'] == Video.Category.SCHEME]
+        categories = [c for c in data if c['scheme'] == Category.SCHEME]
         assert len(categories) == 1
-        self.category = Video.Category(categories[0]['term'])
+        self.category = Category(categories[0]['term'])
         self.category.label = categories[0]['label']
 
         # parse keywords
